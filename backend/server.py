@@ -39,6 +39,75 @@ class StatusCheck(BaseModel):
 class StatusCheckCreate(BaseModel):
     client_name: str
 
+# User Profile Models
+class UserProfile(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    name: str
+    email: str
+    currentStreak: int = 0
+    longestStreak: int = 0
+    totalWorkouts: int = 0
+    joinDate: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+    fitnessGoal: Optional[str] = None
+    fitnessLevel: Optional[str] = None
+
+class UserProfileUpdate(BaseModel):
+    name: Optional[str] = None
+    email: Optional[str] = None
+    fitnessGoal: Optional[str] = None
+    fitnessLevel: Optional[str] = None
+
+# Workout Models
+class Exercise(BaseModel):
+    name: str
+    sets: int
+    reps: str
+
+class WorkoutPlan(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    user_id: str
+    name: str
+    duration: str
+    difficulty: str
+    type: str
+    exercises: List[Exercise]
+    completed: bool = False
+    scheduledFor: Optional[str] = None
+    createdAt: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+
+class CreateWorkoutPlan(BaseModel):
+    name: str
+    duration: str
+    difficulty: str
+    type: str
+    exercises: List[Exercise]
+    scheduledFor: Optional[str] = None
+
+class WorkoutLog(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    user_id: str
+    workout_id: str
+    workout_name: str
+    duration: str
+    completedAt: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+
+# AI Models
+class AIRecommendationRequest(BaseModel):
+    user_id: str
+
+class FormCheckRequest(BaseModel):
+    exercise_name: str
+    image_base64: str
+
+class RestDayRequest(BaseModel):
+    user_id: str
+
 # Add your routes to the router instead of directly to app
 @api_router.get("/")
 async def root():
