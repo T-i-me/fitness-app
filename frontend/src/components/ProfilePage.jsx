@@ -244,13 +244,27 @@ const ProfilePage = () => {
         <Card className="p-6 bg-white border-0 shadow-lg border-red-200">
           <h3 className="text-xl font-bold text-red-600 mb-4">Danger Zone</h3>
           <div className="space-y-3">
-            <Button variant="outline" className="w-full justify-start text-red-600 hover:bg-red-50 border-red-200">
-              <Icons.RefreshCw className="w-4 h-4 mr-2" />
-              Reset All Progress
+            <Button 
+              variant="outline" 
+              className="w-full justify-start text-red-600 hover:bg-red-50 border-red-200"
+              onClick={handleResetProgress}
+              disabled={resetLoading}
+            >
+              {resetLoading ? (
+                <>
+                  <Icons.Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Resetting...
+                </>
+              ) : (
+                <>
+                  <Icons.RefreshCw className="w-4 h-4 mr-2" />
+                  Reset All Progress
+                </>
+              )}
             </Button>
-            <Button variant="outline" className="w-full justify-start text-red-600 hover:bg-red-50 border-red-200">
+            <Button variant="outline" className="w-full justify-start text-red-600 hover:bg-red-50 border-red-200" disabled>
               <Icons.Trash2 className="w-4 h-4 mr-2" />
-              Delete Account
+              Delete Account (Coming Soon)
             </Button>
           </div>
         </Card>
