@@ -8,6 +8,10 @@ import { Badge } from './ui/badge';
 import * as Icons from 'lucide-react';
 import { getUserProfile, saveUserProfile } from '../mockData';
 import { useToast } from '../hooks/use-toast';
+import axios from 'axios';
+
+const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
+const API = `${BACKEND_URL}/api`;
 
 const ProfilePage = () => {
   const navigate = useNavigate();
@@ -15,6 +19,7 @@ const ProfilePage = () => {
   const [user, setUser] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({});
+  const [resetLoading, setResetLoading] = useState(false);
 
   useEffect(() => {
     const profile = getUserProfile();
@@ -34,6 +39,55 @@ const ProfilePage = () => {
 
   const handleChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleResetProgress = async () => {
+    if (!window.confirm('Are you sure you want to reset all your progress? This action cannot be undone.')) {
+      return;
+    }
+
+    setResetLoading(true);
+    try {
+      await axios.post(`${API}/users/${user.id}/reset-progress`);
+      
+      // Update local state
+      const updatedUser = {
+        ...user,
+        currentStreak: 0,
+        totalWorkouts: 0
+      };
+      saveUserProfile(updatedUser);
+      setUser(updatedUser);
+      setFormData(updatedUser);
+      
+      // Clear workout logs from localStorage
+      localStorage.removeItem('workoutLog');
+      
+      toast({
+        title: "Progress Reset",
+        description: "All your progress has been reset successfully.",
+      });
+    } catch (error) {
+      console.error('Error resetting progress:', error);
+      
+      // Fallback to localStorage if API fails
+      const updatedUser = {
+        ...user,
+        currentStreak: 0,
+        totalWorkouts: 0
+      };
+      saveUserProfile(updatedUser);
+      setUser(updatedUser);
+      setFormData(updatedUser);
+      localStorage.removeItem('workoutLog');
+      
+      toast({
+        title: "Progress Reset",
+        description: "Your progress has been reset.",
+      });
+    } finally {
+      setResetLoading(false);
+    }
   };
 
   if (!user) return null;
