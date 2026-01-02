@@ -59,6 +59,10 @@ const Dashboard = () => {
                 <Icons.Book className="w-4 h-4 mr-2" />
                 Exercises
               </Button>
+              <Button variant="ghost" onClick={() => navigate('/ai-features')}>
+                <Icons.Sparkles className="w-4 h-4 mr-2" />
+                AI Features
+              </Button>
               <Button variant="ghost" onClick={() => navigate('/progress')}>
                 <Icons.TrendingUp className="w-4 h-4 mr-2" />
                 Progress
