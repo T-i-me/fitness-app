@@ -6,6 +6,8 @@ import ExerciseLibrary from './components/ExerciseLibrary';
 import ProgressPage from './components/ProgressPage';
 import ProfilePage from './components/ProfilePage';
 import WorkoutDetail from './components/WorkoutDetail';
+import AIFeatures from './components/AIFeatures';
+import WorkoutBuilder from './components/WorkoutBuilder';
 import { Toaster } from './components/ui/sonner';
 import { getQuizAnswers } from './mockData';
 
@@ -57,6 +59,22 @@ function App() {
             element={
               <ProtectedRoute>
                 <WorkoutDetail />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/ai-features" 
+            element={
+              <ProtectedRoute>
+                <AIFeatures />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/workout-builder" 
+            element={
+              <ProtectedRoute>
+                <WorkoutBuilder />
               </ProtectedRoute>
             } 
           />
