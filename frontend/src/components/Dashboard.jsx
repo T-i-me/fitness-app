@@ -185,18 +185,33 @@ const Dashboard = () => {
         </div>
 
         {/* Quick Actions */}
-        <Card className="p-6 bg-gradient-to-r from-blue-600 to-purple-600 border-0 text-white">
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="text-xl font-bold mb-2">Need a new workout plan?</h3>
-              <p className="text-blue-100">Retake the quiz to get a personalized plan</p>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <Card className="p-6 bg-gradient-to-r from-blue-600 to-purple-600 border-0 text-white">
+            <div className="flex flex-col justify-between h-full">
+              <div>
+                <h3 className="text-xl font-bold mb-2">Create Custom Workout</h3>
+                <p className="text-blue-100 mb-4">Build your own personalized workout plan</p>
+              </div>
+              <Button onClick={() => navigate('/workout-builder')} variant="secondary" className="bg-white text-blue-600 hover:bg-blue-50 w-full">
+                <Icons.Plus className="w-4 h-4 mr-2" />
+                Build Workout
+              </Button>
             </div>
-            <Button onClick={() => navigate('/')} variant="secondary" className="bg-white text-blue-600 hover:bg-blue-50">
-              <Icons.RefreshCw className="w-4 h-4 mr-2" />
-              Retake Quiz
-            </Button>
-          </div>
-        </Card>
+          </Card>
+          
+          <Card className="p-6 bg-gradient-to-r from-purple-600 to-pink-600 border-0 text-white">
+            <div className="flex flex-col justify-between h-full">
+              <div>
+                <h3 className="text-xl font-bold mb-2">AI-Powered Features</h3>
+                <p className="text-purple-100 mb-4">Get smart recommendations & form analysis</p>
+              </div>
+              <Button onClick={() => navigate('/ai-features')} variant="secondary" className="bg-white text-purple-600 hover:bg-purple-50 w-full">
+                <Icons.Sparkles className="w-4 h-4 mr-2" />
+                Try AI Features
+              </Button>
+            </div>
+          </Card>
+        </div>
       </div>
     </div>
   );
