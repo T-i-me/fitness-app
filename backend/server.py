@@ -137,6 +137,159 @@ async def get_status_checks():
     
     return status_checks
 
+# User Profile Endpoints
+@api_router.post("/users", response_model=UserProfile)
+async def create_user(user: UserProfile):
+    doc = user.model_dump()
+    await db.users.insert_one(doc)
+    return user
+
+@api_router.get("/users/{user_id}", response_model=UserProfile)
+async def get_user(user_id: str):
+    user = await db.users.find_one({"id": user_id}, {"_id": 0})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    return UserProfile(**user)
+
+@api_router.put("/users/{user_id}", response_model=UserProfile)
+async def update_user(user_id: str, update: UserProfileUpdate):
+    update_data = {k: v for k, v in update.model_dump().items() if v is not None}
+    if not update_data:
+        raise HTTPException(status_code=400, detail="No fields to update")
+    
+    result = await db.users.update_one(
+        {"id": user_id},
+        {"$set": update_data}
+    )
+    
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    user = await db.users.find_one({"id": user_id}, {"_id": 0})
+    return UserProfile(**user)
+
+@api_router.post("/users/{user_id}/reset-progress")
+async def reset_user_progress(user_id: str):
+    """Reset user's workout progress including streak and workout count"""
+    result = await db.users.update_one(
+        {"id": user_id},
+        {"$set": {
+            "currentStreak": 0,
+            "totalWorkouts": 0
+        }}
+    )
+    
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    # Also delete all workout logs for this user
+    await db.workout_logs.delete_many({"user_id": user_id})
+    
+    user = await db.users.find_one({"id": user_id}, {"_id": 0})
+    return {"message": "Progress reset successfully", "user": UserProfile(**user)}
+
+# Workout Plan Endpoints
+@api_router.post("/users/{user_id}/workouts", response_model=WorkoutPlan)
+async def create_workout_plan(user_id: str, workout: CreateWorkoutPlan):
+    workout_plan = WorkoutPlan(
+        user_id=user_id,
+        **workout.model_dump()
+    )
+    doc = workout_plan.model_dump()
+    await db.workout_plans.insert_one(doc)
+    return workout_plan
+
+@api_router.get("/users/{user_id}/workouts", response_model=List[WorkoutPlan])
+async def get_user_workouts(user_id: str):
+    workouts = await db.workout_plans.find({"user_id": user_id}, {"_id": 0}).to_list(1000)
+    return [WorkoutPlan(**w) for w in workouts]
+
+@api_router.put("/workouts/{workout_id}/complete")
+async def complete_workout(workout_id: str):
+    result = await db.workout_plans.update_one(
+        {"id": workout_id},
+        {"$set": {"completed": True}}
+    )
+    
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Workout not found")
+    
+    # Get workout details to log it
+    workout = await db.workout_plans.find_one({"id": workout_id}, {"_id": 0})
+    if workout:
+        # Create workout log
+        log = WorkoutLog(
+            user_id=workout['user_id'],
+            workout_id=workout_id,
+            workout_name=workout['name'],
+            duration=workout['duration']
+        )
+        await db.workout_logs.insert_one(log.model_dump())
+        
+        # Update user stats
+        await db.users.update_one(
+            {"id": workout['user_id']},
+            {
+                "$inc": {
+                    "totalWorkouts": 1,
+                    "currentStreak": 1
+                }
+            }
+        )
+    
+    return {"message": "Workout completed", "workout": workout}
+
+@api_router.delete("/workouts/{workout_id}")
+async def delete_workout(workout_id: str):
+    result = await db.workout_plans.delete_one({"id": workout_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Workout not found")
+    return {"message": "Workout deleted"}
+
+# Workout Log Endpoints
+@api_router.get("/users/{user_id}/workout-logs", response_model=List[WorkoutLog])
+async def get_workout_logs(user_id: str):
+    logs = await db.workout_logs.find({"user_id": user_id}, {"_id": 0}).to_list(1000)
+    return [WorkoutLog(**log) for log in logs]
+
+# AI-Powered Endpoints
+@api_router.post("/ai/workout-recommendations")
+async def get_workout_recommendations(request: AIRecommendationRequest):
+    """Get AI-powered workout recommendations"""
+    # Get user data
+    user = await db.users.find_one({"id": request.user_id}, {"_id": 0})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    # Get recent workout logs
+    logs = await db.workout_logs.find({"user_id": request.user_id}, {"_id": 0}).to_list(10)
+    
+    recommendations = await get_ai_workout_recommendations(user, logs)
+    return recommendations
+
+@api_router.post("/ai/form-check")
+async def check_exercise_form(request: FormCheckRequest):
+    """Analyze exercise form from image"""
+    if not request.image_base64:
+        raise HTTPException(status_code=400, detail="Image is required")
+    
+    analysis = await analyze_exercise_form(request.image_base64, request.exercise_name)
+    return analysis
+
+@api_router.post("/ai/rest-day-suggestion")
+async def get_rest_suggestion(request: RestDayRequest):
+    """Get smart rest day suggestion"""
+    # Get user data
+    user = await db.users.find_one({"id": request.user_id}, {"_id": 0})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    # Get recent workouts
+    logs = await db.workout_logs.find({"user_id": request.user_id}, {"_id": 0}).sort("completedAt", -1).to_list(7)
+    
+    suggestion = await get_rest_day_suggestion(user, logs)
+    return suggestion
+
 # Include the router in the main app
 app.include_router(api_router)
 
